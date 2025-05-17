@@ -1,0 +1,52 @@
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+interface ViewDialogProps {
+  showViewDialog: boolean;
+  setShowViewDialog: (show: boolean) => void;
+  currentView: { id: string; name: string };
+  setCurrentView: React.Dispatch<React.SetStateAction<{ id: string; name: string }>>;
+  isEditMode: boolean;
+  handleAddView: () => void;
+}
+
+const ViewDialog: React.FC<ViewDialogProps> = ({
+  showViewDialog,
+  setShowViewDialog,
+  currentView,
+  setCurrentView,
+  isEditMode,
+  handleAddView
+}) => {
+  return (
+    <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? 'Edit View' : 'Add New View'}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div>
+            <Label htmlFor="view-name">Name</Label>
+            <Input 
+              id="view-name" 
+              value={currentView.name} 
+              onChange={(e) => setCurrentView({...currentView, name: e.target.value})}
+              placeholder="Main Menu"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleAddView}>
+            {isEditMode ? 'Update' : 'Add'} View
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ViewDialog;

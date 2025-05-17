@@ -1,46 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Copy, Edit, Save } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import InteractiveDiscordPreview from '@/components/InteractiveDiscordPreview';
-
-interface DiscordEmbed {
-  id: string;
-  title: string;
-  description: string;
-  color: string;
-  fields: { name: string; value: string; inline: boolean }[];
-}
-
-interface DiscordButton {
-  id: string;
-  label: string;
-  style: 'primary' | 'secondary' | 'success' | 'danger';
-  action: 'navigate' | 'custom';
-  targetViewId?: string;
-  customCode?: string;
-}
-
-interface DiscordSelectMenu {
-  id: string;
-  placeholder: string;
-  options: { label: string; value: string; description?: string }[];
-  action: 'filter' | 'navigate';
-  targetViewId?: string;
-}
-
-interface DiscordView {
-  id: string;
-  name: string;
-  embeds: DiscordEmbed[];
-  buttons: DiscordButton[];
-  selectMenus: DiscordSelectMenu[];
-}
+import ViewSelector from '@/components/discord/ViewSelector';
+import ActionButtons from '@/components/discord/ActionButtons';
+import DiscordPreview from '@/components/discord/DiscordPreview';
+import CodeDialog from '@/components/discord/CodeDialog';
+import ViewDialog from '@/components/discord/dialogs/ViewDialog';
+import EmbedDialog from '@/components/discord/dialogs/EmbedDialog';
+import ButtonDialog from '@/components/discord/dialogs/ButtonDialog';
+import SelectMenuDialog from '@/components/discord/dialogs/SelectMenuDialog';
+import { DiscordEmbed, DiscordButton, DiscordSelectMenu, DiscordView } from '@/components/discord/DiscordTypes';
+import { generateId } from '@/components/discord/utils';
 
 const Index: React.FC = () => {
   const [views, setViews] = useState<DiscordView[]>(() => {
@@ -109,10 +80,6 @@ const Index: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('discordViews', JSON.stringify(views));
   }, [views]);
-
-  const generateId = (prefix: string): string => {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
 
   const handleAddView = () => {
     if (!currentView.name.trim()) {
@@ -468,474 +435,46 @@ const Index: React.FC = () => {
     }
   };
 
-  const generateDiscordCode = () => {
-    // Generate Python code using discord.py
-    const pythonCode = `
-import discord
-from discord.ext import commands
-from discord import ButtonStyle
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# Dictionary to store all views
-views = ${JSON.stringify(views, null, 2)}
-
-class MenuView(discord.ui.View):
-    def __init__(self, view_id):
-        super().__init__(timeout=None)
-        self.view_id = view_id
-        self.view_data = next((v for v in views if v["id"] == view_id), None)
-        
-        # Add buttons
-        if self.view_data:
-            for button in self.view_data["buttons"]:
-                btn = discord.ui.Button(
-                    label=button["label"],
-                    style=getattr(ButtonStyle, button["style"].upper()),
-                    custom_id=f"button_{button['id']}"
-                )
-                self.add_item(btn)
-            
-            # Add select menus
-            for menu in self.view_data["selectMenus"]:
-                options = []
-                for opt in menu["options"]:
-                    options.append(
-                        discord.SelectOption(
-                            label=opt["label"], 
-                            value=opt["value"], 
-                            description=opt.get("description", "")
-                        )
-                    )
-                select = discord.ui.Select(
-                    placeholder=menu["placeholder"],
-                    options=options,
-                    custom_id=f"select_{menu['id']}"
-                )
-                self.add_item(select)
-
-@bot.event
-async def on_ready():
-    print(f'{bot.user.name} has connected to Discord!')
-
-@bot.command(name='menu')
-async def menu(ctx, view_id='main_view'):
-    """Display the menu for the bot"""
-    view_data = next((v for v in views if v["id"] == view_id), None)
-    
-    if not view_data:
-        await ctx.send(f"View '{view_id}' not found.")
-        return
-    
-    embeds = []
-    for embed_data in view_data["embeds"]:
-        embed = discord.Embed(
-            title=embed_data["title"],
-            description=embed_data["description"],
-            color=int(embed_data["color"].lstrip('#'), 16)
-        )
-        for field in embed_data["fields"]:
-            embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
-        embeds.append(embed)
-    
-    view = MenuView(view_id)
-    if embeds:
-        await ctx.send(embeds=embeds, view=view)
-    else:
-        await ctx.send(f"Menu: {view_data['name']}", view=view)
-
-@bot.event
-async def on_interaction(interaction):
-    if interaction.type == discord.InteractionType.component:
-        custom_id = interaction.data["custom_id"]
-        
-        if custom_id.startswith("button_"):
-            button_id = custom_id[7:]  # Remove "button_" prefix
-            
-            # Find the button data
-            for view in views:
-                button = next((b for b in view["buttons"] if b["id"] == button_id), None)
-                if button:
-                    if button["action"] == "navigate" and button["targetViewId"]:
-                        # Navigate to another view
-                        target_view = next((v for v in views if v["id"] == button["targetViewId"]), None)
-                        if target_view:
-                            embeds = []
-                            for embed_data in target_view["embeds"]:
-                                embed = discord.Embed(
-                                    title=embed_data["title"],
-                                    description=embed_data["description"],
-                                    color=int(embed_data["color"].lstrip('#'), 16)
-                                )
-                                for field in embed_data["fields"]:
-                                    embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
-                                embeds.append(embed)
-                            
-                            new_view = MenuView(button["targetViewId"])
-                            await interaction.response.edit_message(embeds=embeds if embeds else [], content=None if embeds else f"Menu: {target_view['name']}", view=new_view)
-                            return
-                    elif button["action"] == "custom" and button.get("customCode"):
-                        # This would execute custom code, simplified for the example
-                        await interaction.response.send_message(f"Custom button action: {button.get('customCode')}", ephemeral=True)
-                        return
-        
-        elif custom_id.startswith("select_"):
-            select_id = custom_id[7:]  # Remove "select_" prefix
-            selected_value = interaction.data["values"][0]
-            
-            # Find the select menu data
-            for view in views:
-                menu = next((m for m in view["selectMenus"] if m["id"] == select_id), None)
-                if menu:
-                    if menu["action"] == "navigate" and menu["targetViewId"]:
-                        # Navigate to another view based on selection
-                        target_view = next((v for v in views if v["id"] == menu["targetViewId"]), None)
-                        if target_view:
-                            embeds = []
-                            for embed_data in target_view["embeds"]:
-                                embed = discord.Embed(
-                                    title=embed_data["title"],
-                                    description=embed_data["description"],
-                                    color=int(embed_data["color"].lstrip('#'), 16)
-                                )
-                                for field in embed_data["fields"]:
-                                    embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
-                                embeds.append(embed)
-                            
-                            new_view = MenuView(menu["targetViewId"])
-                            await interaction.response.edit_message(embeds=embeds if embeds else [], content=None if embeds else f"Menu: {target_view['name']}", view=new_view)
-                            return
-                    elif menu["action"] == "filter":
-                        # Filter content based on selection
-                        current_view = view
-                        await interaction.response.send_message(f"Selected filter: {selected_value}", ephemeral=True)
-                        return
-
-# Run the bot
-bot.run(TOKEN)
-    `;
-    
-    const javascriptCode = `
-// Discord.js implementation (Node.js)
-const { Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
-require('dotenv').config();
-
-// Store all views
-const views = ${JSON.stringify(views, null, 2)};
-
-client.once('ready', () => {
-    console.log(\`Logged in as \${client.user.tag}\`);
-});
-
-// Function to create embeds from view data
-function createEmbeds(viewData) {
-    return viewData.embeds.map(embedData => {
-        const embed = new MessageEmbed()
-            .setTitle(embedData.title)
-            .setDescription(embedData.description)
-            .setColor(embedData.color);
-            
-        embedData.fields.forEach(field => {
-            embed.addField(field.name, field.value, field.inline);
-        });
-        
-        return embed;
+  // Dialog opener handlers
+  const handleAddEmbedClick = () => {
+    setIsEditMode(false);
+    setCurrentEmbed({
+      id: '',
+      title: '',
+      description: '',
+      color: '#5865F2',
+      fields: []
     });
-}
-
-// Function to create components (buttons, select menus) from view data
-function createComponents(viewData) {
-    const components = [];
-    
-    // Create button rows (max 5 buttons per row)
-    if (viewData.buttons.length > 0) {
-        const buttonRows = [];
-        for (let i = 0; i < viewData.buttons.length; i += 5) {
-            const row = new MessageActionRow();
-            const buttonsSlice = viewData.buttons.slice(i, i + 5);
-            
-            buttonsSlice.forEach(button => {
-                row.addComponents(
-                    new MessageButton()
-                        .setCustomId(\`button_\${button.id}\`)
-                        .setLabel(button.label)
-                        .setStyle(button.style.toUpperCase())
-                );
-            });
-            
-            buttonRows.push(row);
-        }
-        components.push(...buttonRows);
-    }
-    
-    // Create select menu rows (one menu per row)
-    viewData.selectMenus.forEach(menu => {
-        const row = new MessageActionRow();
-        const selectMenu = new MessageSelectMenu()
-            .setCustomId(\`select_\${menu.id}\`)
-            .setPlaceholder(menu.placeholder);
-            
-        menu.options.forEach(option => {
-            selectMenu.addOptions({
-                label: option.label,
-                value: option.value,
-                description: option.description || undefined
-            });
-        });
-        
-        row.addComponents(selectMenu);
-        components.push(row);
-    });
-    
-    return components;
-}
-
-// Command to show menu
-client.on('messageCreate', async message => {
-    if (message.content.startsWith('!menu')) {
-        const args = message.content.split(' ');
-        const viewId = args[1] || 'main_view';
-        
-        const viewData = views.find(v => v.id === viewId);
-        if (!viewData) {
-            message.reply(\`View '\${viewId}' not found.\`);
-            return;
-        }
-        
-        const embeds = createEmbeds(viewData);
-        const components = createComponents(viewData);
-        
-        if (embeds.length > 0) {
-            await message.channel.send({ 
-                embeds: embeds, 
-                components: components 
-            });
-        } else {
-            await message.channel.send({ 
-                content: \`Menu: \${viewData.name}\`, 
-                components: components 
-            });
-        }
-    }
-});
-
-// Handle interactions
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isButton() && !interaction.isSelectMenu()) return;
-    
-    const customId = interaction.customId;
-    
-    if (customId.startsWith('button_')) {
-        const buttonId = customId.substring(7); // Remove 'button_' prefix
-        
-        // Find the button data
-        for (const view of views) {
-            const button = view.buttons.find(b => b.id === buttonId);
-            if (button) {
-                if (button.action === 'navigate' && button.targetViewId) {
-                    // Navigate to another view
-                    const targetView = views.find(v => v.id === button.targetViewId);
-                    if (targetView) {
-                        const embeds = createEmbeds(targetView);
-                        const components = createComponents(targetView);
-                        
-                        await interaction.update({
-                            embeds: embeds.length > 0 ? embeds : [],
-                            content: embeds.length > 0 ? null : \`Menu: \${targetView.name}\`,
-                            components: components
-                        });
-                    }
-                } else if (button.action === 'custom' && button.customCode) {
-                    // Execute custom action
-                    await interaction.reply({ 
-                        content: \`Custom button action: \${button.customCode}\`, 
-                        ephemeral: true 
-                    });
-                }
-                break;
-            }
-        }
-    } else if (customId.startsWith('select_')) {
-        const selectId = customId.substring(7); // Remove 'select_' prefix
-        const selectedValue = interaction.values[0];
-        
-        // Find the select menu data
-        for (const view of views) {
-            const menu = view.selectMenus.find(m => m.id === selectId);
-            if (menu) {
-                if (menu.action === 'navigate' && menu.targetViewId) {
-                    // Navigate to another view based on selection
-                    const targetView = views.find(v => v.id === menu.targetViewId);
-                    if (targetView) {
-                        const embeds = createEmbeds(targetView);
-                        const components = createComponents(targetView);
-                        
-                        await interaction.update({
-                            embeds: embeds.length > 0 ? embeds : [],
-                            content: embeds.length > 0 ? null : \`Menu: \${targetView.name}\`,
-                            components: components
-                        });
-                    }
-                } else if (menu.action === 'filter') {
-                    // Filter content based on selection
-                    await interaction.reply({ 
-                        content: \`Selected filter: \${selectedValue}\`, 
-                        ephemeral: true 
-                    });
-                }
-                break;
-            }
-        }
-    }
-});
-
-client.login(process.env.DISCORD_TOKEN);
-`;
-
-    return {
-      python: pythonCode,
-      javascript: javascriptCode,
-      json: JSON.stringify(views, null, 2)
-    };
+    setShowEmbedDialog(true);
   };
 
-  const getButtonStyleClass = (style: string) => {
-    switch (style) {
-      case 'primary': return 'bg-blue-600 hover:bg-blue-700 text-white';
-      case 'secondary': return 'bg-gray-500 hover:bg-gray-600 text-white';
-      case 'success': return 'bg-green-600 hover:bg-green-700 text-white';
-      case 'danger': return 'bg-red-600 hover:bg-red-700 text-white';
-      default: return 'bg-blue-600 hover:bg-blue-700 text-white';
-    }
+  const handleAddButtonClick = () => {
+    setIsEditMode(false);
+    setCurrentButton({
+      id: '',
+      label: '',
+      style: 'primary',
+      action: 'navigate',
+      targetViewId: ''
+    });
+    setShowButtonDialog(true);
   };
 
-  const renderPreview = () => {
-    return (
-      <Card className="bg-slate-800 text-white overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex justify-between">
-            <span>Discord Preview: {activeView.name}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activeView.embeds.map((embed, index) => (
-            <div 
-              key={embed.id}
-              className="mb-4 rounded border-l-4 p-4 relative"
-              style={{ borderLeftColor: embed.color, backgroundColor: '#2f3136' }}
-            >
-              <h3 className="text-xl font-semibold">{embed.title}</h3>
-              <p className="mt-2 text-gray-300 whitespace-pre-wrap">{embed.description}</p>
-              
-              {embed.fields.length > 0 && (
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {embed.fields.map((field, fieldIndex) => (
-                    <div key={fieldIndex} className={field.inline ? "col-span-1" : "col-span-2"}>
-                      <h4 className="font-semibold">{field.name}</h4>
-                      <p className="text-gray-300">{field.value}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              <div className="absolute top-2 right-2 flex space-x-1">
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={() => handleEditItem('embed', embed.id)}
-                  className="p-1 h-auto"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={() => handleDeleteItem('embed', embed.id)}
-                  className="p-1 h-auto text-red-500 hover:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-          
-          {activeView.buttons.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {activeView.buttons.map((button, index) => (
-                <div key={button.id} className="relative group">
-                  <button className={`px-4 py-2 rounded ${getButtonStyleClass(button.style)}`}>
-                    {button.label}
-                  </button>
-                  <div className="absolute -top-1 -right-1 flex opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleEditItem('button', button.id)}
-                      className="p-1 h-auto bg-gray-800 rounded-full"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleDeleteItem('button', button.id)}
-                      className="p-1 h-auto bg-gray-800 rounded-full text-red-500 hover:text-red-400"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {activeView.selectMenus.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {activeView.selectMenus.map((menu, index) => (
-                <div key={menu.id} className="relative group">
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder={menu.placeholder} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {menu.options.map((option, optIndex) => (
-                        <SelectItem key={optIndex} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="absolute -top-1 -right-1 flex opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleEditItem('select', menu.id)}
-                      className="p-1 h-auto bg-gray-800 rounded-full"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleDeleteItem('select', menu.id)}
-                      className="p-1 h-auto bg-gray-800 rounded-full text-red-500 hover:text-red-400"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
+  const handleAddSelectMenuClick = () => {
+    setIsEditMode(false);
+    setCurrentSelectMenu({
+      id: '',
+      placeholder: '',
+      options: [],
+      action: 'navigate'
+    });
+    setShowSelectMenuDialog(true);
+  };
+
+  const handleAddViewClick = () => {
+    setIsEditMode(false);
+    setCurrentView({ id: '', name: '' });
+    setShowViewDialog(true);
   };
 
   return (
@@ -944,465 +483,33 @@ client.login(process.env.DISCORD_TOKEN);
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <Card className="mb-4">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Views</span>
-                <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setIsEditMode(false);
-                      setCurrentView({ id: '', name: '' });
-                    }}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add View
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{isEditMode ? 'Edit View' : 'Add New View'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div>
-                        <Label htmlFor="view-name">Name</Label>
-                        <Input 
-                          id="view-name" 
-                          value={currentView.name} 
-                          onChange={(e) => setCurrentView({...currentView, name: e.target.value})}
-                          placeholder="Main Menu"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddView}>
-                        {isEditMode ? 'Update' : 'Add'} View
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col space-y-2">
-                {views.map((view) => (
-                  <div 
-                    key={view.id}
-                    className={`p-2 rounded-md flex justify-between items-center cursor-pointer ${
-                      activeViewId === view.id ? 'bg-blue-100 dark:bg-blue-900' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
-                    onClick={() => setActiveViewId(view.id)}
-                  >
-                    <span>{view.name}</span>
-                    <div className="flex space-x-1">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditItem('view', view.id);
-                        }}
-                        className="p-1 h-auto"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteItem('view', view.id);
-                        }}
-                        className="p-1 h-auto text-red-500 hover:text-red-400"
-                        disabled={views.length <= 1}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <ViewSelector 
+            views={views}
+            activeViewId={activeViewId}
+            setActiveViewId={setActiveViewId}
+            onAddViewClick={handleAddViewClick}
+            onEditView={(id) => handleEditItem('view', id)}
+            onDeleteView={(id) => handleDeleteItem('view', id)}
+          />
           
-          <Card className="mb-4">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Active View: {activeView.name}</span>
-                <Button onClick={() => setShowCodeDialog(true)}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Export Code
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col space-y-3">
-                <Dialog open={showEmbedDialog} onOpenChange={setShowEmbedDialog}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setIsEditMode(false);
-                      setCurrentEmbed({
-                        id: '',
-                        title: '',
-                        description: '',
-                        color: '#5865F2',
-                        fields: []
-                      });
-                    }}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Embed
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{isEditMode ? 'Edit Embed' : 'Add New Embed'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div>
-                        <Label htmlFor="title">Title</Label>
-                        <Input 
-                          id="title" 
-                          value={currentEmbed.title} 
-                          onChange={(e) => setCurrentEmbed({...currentEmbed, title: e.target.value})}
-                          placeholder="Menu Title"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Input 
-                          id="description" 
-                          value={currentEmbed.description} 
-                          onChange={(e) => setCurrentEmbed({...currentEmbed, description: e.target.value})}
-                          placeholder="Description text..."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="color">Color</Label>
-                        <div className="flex items-center space-x-2">
-                          <input 
-                            type="color" 
-                            value={currentEmbed.color} 
-                            onChange={(e) => setCurrentEmbed({...currentEmbed, color: e.target.value})}
-                            className="w-10 h-10"
-                          />
-                          <Input 
-                            id="color" 
-                            value={currentEmbed.color} 
-                            onChange={(e) => setCurrentEmbed({...currentEmbed, color: e.target.value})}
-                            placeholder="#5865F2"
-                          />
-                        </div>
-                      </div>
-                      <div className="border rounded-md p-3">
-                        <h3 className="font-medium mb-2">Fields</h3>
-                        {currentEmbed.fields.length > 0 && (
-                          <div className="mb-4 space-y-3">
-                            {currentEmbed.fields.map((field, index) => (
-                              <div key={index} className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                                <div>
-                                  <p className="font-medium">{field.name}</p>
-                                  <p className="text-sm text-gray-500">{field.value}</p>
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  onClick={() => handleRemoveField(index)}
-                                  className="text-red-500 hover:text-red-400"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="grid gap-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label htmlFor="field-name">Field Name</Label>
-                              <Input 
-                                id="field-name" 
-                                value={currentField.name} 
-                                onChange={(e) => setCurrentField({...currentField, name: e.target.value})}
-                                placeholder="Name"
-                              />
-                            </div>
-                            <div className="flex items-end space-x-2">
-                              <div className="flex-grow">
-                                <Label htmlFor="field-value">Field Value</Label>
-                                <Input 
-                                  id="field-value" 
-                                  value={currentField.value} 
-                                  onChange={(e) => setCurrentField({...currentField, value: e.target.value})}
-                                  placeholder="Value"
-                                />
-                              </div>
-                              <div className="flex items-center h-10 whitespace-nowrap">
-                                <input 
-                                  type="checkbox" 
-                                  id="inline" 
-                                  checked={currentField.inline} 
-                                  onChange={(e) => setCurrentField({...currentField, inline: e.target.checked})}
-                                  className="mr-2"
-                                />
-                                <Label htmlFor="inline">Inline</Label>
-                              </div>
-                            </div>
-                          </div>
-                          <Button onClick={handleAddField}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add Field
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddEmbed}>
-                        {isEditMode ? 'Update' : 'Add'} Embed
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-                
-                <Dialog open={showButtonDialog} onOpenChange={setShowButtonDialog}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setIsEditMode(false);
-                      setCurrentButton({
-                        id: '',
-                        label: '',
-                        style: 'primary',
-                        action: 'navigate',
-                        targetViewId: ''
-                      });
-                    }}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Button
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{isEditMode ? 'Edit Button' : 'Add New Button'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div>
-                        <Label htmlFor="button-label">Label</Label>
-                        <Input 
-                          id="button-label" 
-                          value={currentButton.label} 
-                          onChange={(e) => setCurrentButton({...currentButton, label: e.target.value})}
-                          placeholder="Button Text"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="button-style">Style</Label>
-                        <Select 
-                          value={currentButton.style}
-                          onValueChange={(value) => setCurrentButton({...currentButton, style: value as 'primary' | 'secondary' | 'success' | 'danger'})}
-                        >
-                          <SelectTrigger id="button-style">
-                            <SelectValue placeholder="Select style" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="primary">Primary (Blue)</SelectItem>
-                            <SelectItem value="secondary">Secondary (Gray)</SelectItem>
-                            <SelectItem value="success">Success (Green)</SelectItem>
-                            <SelectItem value="danger">Danger (Red)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="button-action">Action</Label>
-                        <Select 
-                          value={currentButton.action}
-                          onValueChange={(value) => setCurrentButton({...currentButton, action: value as 'navigate' | 'custom'})}
-                        >
-                          <SelectTrigger id="button-action">
-                            <SelectValue placeholder="Select action" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="navigate">Navigate to View</SelectItem>
-                            <SelectItem value="custom">Custom Action</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {currentButton.action === 'navigate' && (
-                        <div>
-                          <Label htmlFor="target-view">Target View</Label>
-                          <Select 
-                            value={currentButton.targetViewId}
-                            onValueChange={(value) => setCurrentButton({...currentButton, targetViewId: value})}
-                          >
-                            <SelectTrigger id="target-view">
-                              <SelectValue placeholder="Select view" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {views.map((view) => (
-                                <SelectItem key={view.id} value={view.id}>{view.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                      {currentButton.action === 'custom' && (
-                        <div>
-                          <Label htmlFor="custom-code">Custom Code (Description)</Label>
-                          <Input 
-                            id="custom-code" 
-                            value={currentButton.customCode || ''} 
-                            onChange={(e) => setCurrentButton({...currentButton, customCode: e.target.value})}
-                            placeholder="Describe the custom action"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddButton}>
-                        {isEditMode ? 'Update' : 'Add'} Button
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-                
-                <Dialog open={showSelectMenuDialog} onOpenChange={setShowSelectMenuDialog}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setIsEditMode(false);
-                      setCurrentSelectMenu({
-                        id: '',
-                        placeholder: '',
-                        options: [],
-                        action: 'navigate'
-                      });
-                    }}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Select Menu
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{isEditMode ? 'Edit Select Menu' : 'Add New Select Menu'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div>
-                        <Label htmlFor="placeholder">Placeholder</Label>
-                        <Input 
-                          id="placeholder" 
-                          value={currentSelectMenu.placeholder} 
-                          onChange={(e) => setCurrentSelectMenu({...currentSelectMenu, placeholder: e.target.value})}
-                          placeholder="Choose an option..."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="menu-action">Action</Label>
-                        <Select 
-                          value={currentSelectMenu.action}
-                          onValueChange={(value) => setCurrentSelectMenu({...currentSelectMenu, action: value as 'navigate' | 'filter'})}
-                        >
-                          <SelectTrigger id="menu-action">
-                            <SelectValue placeholder="Select action" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="navigate">Navigate to View</SelectItem>
-                            <SelectItem value="filter">Filter Content</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {currentSelectMenu.action === 'navigate' && (
-                        <div>
-                          <Label htmlFor="target-view">Target View</Label>
-                          <Select 
-                            value={currentSelectMenu.targetViewId}
-                            onValueChange={(value) => setCurrentSelectMenu({...currentSelectMenu, targetViewId: value})}
-                          >
-                            <SelectTrigger id="target-view">
-                              <SelectValue placeholder="Select view" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {views.map((view) => (
-                                <SelectItem key={view.id} value={view.id}>{view.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                      <div className="border rounded-md p-3">
-                        <h3 className="font-medium mb-2">Options</h3>
-                        {currentSelectMenu.options.length > 0 && (
-                          <div className="mb-4 space-y-3">
-                            {currentSelectMenu.options.map((option, index) => (
-                              <div key={index} className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                                <div>
-                                  <p className="font-medium">{option.label}</p>
-                                  <p className="text-sm text-gray-500">{option.value}</p>
-                                  {option.description && (
-                                    <p className="text-xs text-gray-400">{option.description}</p>
-                                  )}
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  onClick={() => handleRemoveOption(index)}
-                                  className="text-red-500 hover:text-red-400"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="grid gap-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label htmlFor="option-label">Label</Label>
-                              <Input 
-                                id="option-label" 
-                                value={currentOption.label} 
-                                onChange={(e) => setCurrentOption({...currentOption, label: e.target.value})}
-                                placeholder="Option Label"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="option-value">Value</Label>
-                              <Input 
-                                id="option-value" 
-                                value={currentOption.value} 
-                                onChange={(e) => setCurrentOption({...currentOption, value: e.target.value})}
-                                placeholder="option_value"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor="option-desc">Description (Optional)</Label>
-                            <Input 
-                              id="option-desc" 
-                              value={currentOption.description} 
-                              onChange={(e) => setCurrentOption({...currentOption, description: e.target.value})}
-                              placeholder="Short description"
-                            />
-                          </div>
-                          <Button onClick={handleAddOption}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add Option
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddSelectMenu}>
-                        {isEditMode ? 'Update' : 'Add'} Select Menu
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardContent>
-          </Card>
+          <ActionButtons 
+            activeView={activeView}
+            onAddEmbedClick={handleAddEmbedClick}
+            onAddButtonClick={handleAddButtonClick}
+            onAddSelectMenuClick={handleAddSelectMenuClick}
+            onShowCodeClick={() => setShowCodeDialog(true)}
+          />
         </div>
         
         <div className="lg:col-span-2">
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold mb-2">Design Preview</h2>
-              {renderPreview()}
+              <DiscordPreview 
+                activeView={activeView}
+                onEditItem={handleEditItem}
+                onDeleteItem={handleDeleteItem}
+              />
             </div>
             
             <div>
@@ -1410,79 +517,61 @@ client.login(process.env.DISCORD_TOKEN);
               <InteractiveDiscordPreview views={views} initialViewId={activeViewId} />
             </div>
           </div>
-          
-          <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Generated Code</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="flex justify-between">
-                  <h3 className="font-semibold">Menu Configuration (JSON)</h3>
-                  <Button onClick={() => navigator.clipboard.writeText(generateDiscordCode().json)} size="sm">
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy JSON
-                  </Button>
-                </div>
-                <pre className="bg-slate-800 text-gray-100 p-4 rounded-md overflow-auto max-h-40">
-                  {generateDiscordCode().json}
-                </pre>
-                
-                <div className="flex justify-between">
-                  <h3 className="font-semibold">JavaScript Implementation (Discord.js)</h3>
-                  <Button onClick={() => navigator.clipboard.writeText(generateDiscordCode().javascript)} size="sm">
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy JavaScript
-                  </Button>
-                </div>
-                <pre className="bg-slate-800 text-gray-100 p-4 rounded-md overflow-auto max-h-60">
-                  {generateDiscordCode().javascript}
-                </pre>
-                
-                <div className="flex justify-between">
-                  <h3 className="font-semibold">Python Implementation (discord.py)</h3>
-                  <Button onClick={() => navigator.clipboard.writeText(generateDiscordCode().python)} size="sm">
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Python
-                  </Button>
-                </div>
-                <pre className="bg-slate-800 text-gray-100 p-4 rounded-md overflow-auto max-h-60">
-                  {generateDiscordCode().python}
-                </pre>
-                
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Instructions to Run</h3>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-                    <p className="font-medium">For Python (discord.py):</p>
-                    <ol className="list-decimal pl-5 mt-2 space-y-2 text-sm">
-                      <li>Create a file named <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">bot.py</code> and paste the Python code.</li>
-                      <li>Create a <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.env</code> file with your Discord bot token: <br/>
-                        <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">DISCORD_TOKEN=your_token_here</code>
-                      </li>
-                      <li>Install required packages: <br/>
-                        <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">pip install discord.py python-dotenv</code>
-                      </li>
-                      <li>Run the bot: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">python bot.py</code></li>
-                    </ol>
-                    
-                    <p className="font-medium mt-4">For JavaScript (Discord.js):</p>
-                    <ol className="list-decimal pl-5 mt-2 space-y-2 text-sm">
-                      <li>Create a file named <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">bot.js</code> and paste the JavaScript code.</li>
-                      <li>Create a <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.env</code> file with your Discord bot token: <br/>
-                        <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">DISCORD_TOKEN=your_token_here</code>
-                      </li>
-                      <li>Initialize npm and install required packages: <br/>
-                        <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">npm init -y<br/>npm install discord.js dotenv</code>
-                      </li>
-                      <li>Run the bot: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">node bot.js</code></li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <ViewDialog 
+        showViewDialog={showViewDialog}
+        setShowViewDialog={setShowViewDialog}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        isEditMode={isEditMode}
+        handleAddView={handleAddView}
+      />
+      
+      <EmbedDialog 
+        showEmbedDialog={showEmbedDialog}
+        setShowEmbedDialog={setShowEmbedDialog}
+        currentEmbed={currentEmbed}
+        setCurrentEmbed={setCurrentEmbed}
+        currentField={currentField}
+        setCurrentField={setCurrentField}
+        handleAddEmbed={handleAddEmbed}
+        handleAddField={handleAddField}
+        handleRemoveField={handleRemoveField}
+        isEditMode={isEditMode}
+      />
+      
+      <ButtonDialog 
+        showButtonDialog={showButtonDialog}
+        setShowButtonDialog={setShowButtonDialog}
+        currentButton={currentButton}
+        setCurrentButton={setCurrentButton}
+        handleAddButton={handleAddButton}
+        views={views}
+        isEditMode={isEditMode}
+      />
+      
+      <SelectMenuDialog 
+        showSelectMenuDialog={showSelectMenuDialog}
+        setShowSelectMenuDialog={setShowSelectMenuDialog}
+        currentSelectMenu={currentSelectMenu}
+        setCurrentSelectMenu={setCurrentSelectMenu}
+        currentOption={currentOption}
+        setCurrentOption={setCurrentOption}
+        handleAddSelectMenu={handleAddSelectMenu}
+        handleAddOption={handleAddOption}
+        handleRemoveOption={handleRemoveOption}
+        views={views}
+        isEditMode={isEditMode}
+      />
+      
+      <CodeDialog 
+        views={views}
+        showCodeDialog={showCodeDialog}
+        setShowCodeDialog={setShowCodeDialog}
+      />
     </div>
   );
 };
