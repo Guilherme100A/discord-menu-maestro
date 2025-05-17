@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Label } from '@/components/ui/label';
 import { PlusCircle, Trash2, Copy, Edit, Save } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
+import InteractiveDiscordPreview from '@/components/InteractiveDiscordPreview';
 
 interface DiscordEmbed {
   id: string;
@@ -1399,7 +1399,17 @@ client.login(process.env.DISCORD_TOKEN);
         </div>
         
         <div className="lg:col-span-2">
-          {renderPreview()}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold mb-2">Design Preview</h2>
+              {renderPreview()}
+            </div>
+            
+            <div>
+              <h2 className="text-lg font-semibold mb-2">Interactive Demo</h2>
+              <InteractiveDiscordPreview views={views} initialViewId={activeViewId} />
+            </div>
+          </div>
           
           <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
