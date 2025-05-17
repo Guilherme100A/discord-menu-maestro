@@ -11,6 +11,11 @@ interface DiscordEmbed {
   description: string;
   color: string;
   fields: { name: string; value: string; inline: boolean }[];
+  url?: string;
+  author?: { name: string; url?: string; iconUrl?: string };
+  footer?: { text: string; iconUrl?: string };
+  thumbnail?: string;
+  image?: string;
 }
 
 interface DiscordButton {
@@ -20,14 +25,20 @@ interface DiscordButton {
   action: 'navigate' | 'custom';
   targetViewId?: string;
   customCode?: string;
+  url?: string;
+  emoji?: string;
+  disabled?: boolean;
 }
 
 interface DiscordSelectMenu {
   id: string;
   placeholder: string;
-  options: { label: string; value: string; description?: string }[];
+  options: { label: string; value: string; description?: string; emoji?: string; default?: boolean }[];
   action: 'filter' | 'navigate';
   targetViewId?: string;
+  minValues?: number;
+  maxValues?: number;
+  disabled?: boolean;
 }
 
 interface DiscordView {
@@ -36,6 +47,8 @@ interface DiscordView {
   embeds: DiscordEmbed[];
   buttons: DiscordButton[];
   selectMenus: DiscordSelectMenu[];
+  ephemeral?: boolean;
+  timeout?: number;
 }
 
 interface InteractiveDiscordPreviewProps {
@@ -58,6 +71,9 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
       if (targetView) {
         setActiveViewId(button.targetViewId);
         actionMessage += ` - Navigated to "${targetView.name}"`;
+        if (targetView.ephemeral) {
+          actionMessage += " (ephemeral)";
+        }
       } else {
         actionMessage += ` - Target view not found`;
       }
@@ -80,6 +96,9 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
       if (targetView) {
         setActiveViewId(menu.targetViewId);
         actionMessage += ` - Navigated to "${targetView.name}"`;
+        if (targetView.ephemeral) {
+          actionMessage += " (ephemeral)";
+        }
       }
     } else if (menu?.action === 'filter') {
       actionMessage += ` - Filtered content`;
@@ -130,8 +149,36 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
             className="mb-4 rounded border-l-4 p-4"
             style={{ borderLeftColor: embed.color, backgroundColor: '#2f3136' }}
           >
-            <h3 className="text-xl font-semibold">{embed.title}</h3>
+            {embed.author && (
+              <div className="flex items-center mb-2">
+                {embed.author.iconUrl && (
+                  <img src={embed.author.iconUrl} alt="Author" className="w-6 h-6 rounded-full mr-2" />
+                )}
+                <span className="font-medium text-sm">
+                  {embed.author.url ? (
+                    <a href={embed.author.url} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                      {embed.author.name}
+                    </a>
+                  ) : embed.author.name}
+                </span>
+              </div>
+            )}
+            
+            <h3 className="text-xl font-semibold">
+              {embed.url ? (
+                <a href={embed.url} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  {embed.title}
+                </a>
+              ) : embed.title}
+            </h3>
+            
             <p className="mt-2 text-gray-300 whitespace-pre-wrap">{embed.description}</p>
+            
+            {embed.thumbnail && (
+              <div className="float-right ml-4 mt-2">
+                <img src={embed.thumbnail} alt="Thumbnail" className="max-w-[80px] rounded" />
+              </div>
+            )}
             
             {embed.fields.length > 0 && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -143,6 +190,21 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
                 ))}
               </div>
             )}
+            
+            {embed.image && (
+              <div className="mt-4">
+                <img src={embed.image} alt="Embed image" className="max-w-full rounded" />
+              </div>
+            )}
+            
+            {embed.footer && (
+              <div className="mt-4 pt-2 border-t border-gray-700 flex items-center">
+                {embed.footer.iconUrl && (
+                  <img src={embed.footer.iconUrl} alt="Footer icon" className="w-4 h-4 rounded-full mr-2" />
+                )}
+                <span className="text-xs text-gray-400">{embed.footer.text}</span>
+              </div>
+            )}
           </div>
         ))}
         
@@ -151,9 +213,11 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
             {activeView.buttons.map((button) => (
               <button 
                 key={button.id}
-                className={`px-4 py-2 rounded ${getButtonStyleClass(button.style)} transition-transform hover:scale-105`}
+                className={`px-4 py-2 rounded ${getButtonStyleClass(button.style)} transition-transform hover:scale-105 ${button.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={() => handleButtonClick(button)}
+                disabled={button.disabled}
               >
+                {button.emoji && <span className="mr-2">{button.emoji}</span>}
                 {button.label}
               </button>
             ))}
@@ -167,13 +231,20 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
                 key={menu.id} 
                 value={selectedOptions[menu.id]} 
                 onValueChange={(value) => handleSelectChange(menu.id, value)}
+                disabled={menu.disabled}
               >
                 <SelectTrigger className="bg-gray-700 border-gray-600">
                   <SelectValue placeholder={menu.placeholder} />
                 </SelectTrigger>
                 <SelectContent>
                   {menu.options.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.emoji && <span className="mr-2">{option.emoji}</span>}
+                      {option.label}
+                      {option.description && (
+                        <span className="text-xs text-gray-400 block">{option.description}</span>
+                      )}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
