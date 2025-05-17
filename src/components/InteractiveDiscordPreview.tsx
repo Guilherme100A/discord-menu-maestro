@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 interface DiscordEmbed {
   id: string;
@@ -86,6 +88,13 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
     setActionHistory(prev => [actionMessage, ...prev.slice(0, 4)]);
   };
 
+  const handleReturnToMain = () => {
+    setActiveViewId(initialViewId);
+    const mainView = views.find(view => view.id === initialViewId);
+    const actionMessage = `Returned to main screen: "${mainView?.name || 'Initial view'}"`;
+    setActionHistory(prev => [actionMessage, ...prev.slice(0, 4)]);
+  };
+
   const getButtonStyleClass = (style: string) => {
     switch (style) {
       case 'primary': return 'bg-blue-600 hover:bg-blue-700 text-white';
@@ -99,8 +108,19 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
   return (
     <Card className="bg-slate-800 text-white overflow-hidden">
       <CardHeader>
-        <CardTitle className="flex justify-between">
+        <CardTitle className="flex justify-between items-center">
           <span>Interactive Preview: {activeView.name}</span>
+          {activeViewId !== initialViewId && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleReturnToMain}
+              className="text-white border-gray-600 hover:bg-slate-700"
+            >
+              <ArrowLeft className="mr-1" size={16} />
+              Return to Main
+            </Button>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
