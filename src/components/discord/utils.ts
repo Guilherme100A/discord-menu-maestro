@@ -45,7 +45,7 @@ class MenuView(discord.ui.View):
             for button in self.view_data["buttons"]:
                 btn = discord.ui.Button(
                     label=button["label"],
-                    style=getattr(ButtonStyle, button["style"].upper()),
+                    style=getattr(ButtonStyle, button["style"]),
                     custom_id=f"button_{button['id']}"
                 )
                 self.add_item(btn)
@@ -214,7 +214,7 @@ function createComponents(viewData) {
                     new MessageButton()
                         .setCustomId(\`button_\${button.id}\`)
                         .setLabel(button.label)
-                        .setStyle(button.style.toUpperCase())
+                        .setStyle(button.style)
                 );
             });
             
