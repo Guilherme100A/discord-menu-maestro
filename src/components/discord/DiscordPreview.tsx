@@ -32,8 +32,36 @@ const DiscordPreview: React.FC<DiscordPreviewProps> = ({
             className="mb-4 rounded border-l-4 p-4 relative"
             style={{ borderLeftColor: embed.color, backgroundColor: '#2f3136' }}
           >
-            <h3 className="text-xl font-semibold">{embed.title}</h3>
+            {embed.author && (
+              <div className="flex items-center mb-2">
+                {embed.author.iconUrl && (
+                  <img src={embed.author.iconUrl} alt="Author" className="w-6 h-6 rounded-full mr-2" />
+                )}
+                <span className="font-medium text-sm">
+                  {embed.author.url ? (
+                    <a href={embed.author.url} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                      {embed.author.name}
+                    </a>
+                  ) : embed.author.name}
+                </span>
+              </div>
+            )}
+            
+            <h3 className="text-xl font-semibold">
+              {embed.url ? (
+                <a href={embed.url} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  {embed.title}
+                </a>
+              ) : embed.title}
+            </h3>
+            
             <p className="mt-2 text-gray-300 whitespace-pre-wrap">{embed.description}</p>
+            
+            {embed.thumbnail && (
+              <div className="float-right ml-4 mt-2">
+                <img src={embed.thumbnail} alt="Thumbnail" className="max-w-[80px] rounded" />
+              </div>
+            )}
             
             {embed.fields.length > 0 && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -43,6 +71,21 @@ const DiscordPreview: React.FC<DiscordPreviewProps> = ({
                     <p className="text-gray-300">{field.value}</p>
                   </div>
                 ))}
+              </div>
+            )}
+            
+            {embed.image && (
+              <div className="mt-4 clear-both">
+                <img src={embed.image} alt="Embed image" className="max-w-full rounded" />
+              </div>
+            )}
+            
+            {embed.footer && (
+              <div className="mt-4 pt-2 border-t border-gray-700 flex items-center">
+                {embed.footer.iconUrl && (
+                  <img src={embed.footer.iconUrl} alt="Footer icon" className="w-4 h-4 rounded-full mr-2" />
+                )}
+                <span className="text-xs text-gray-400">{embed.footer.text}</span>
               </div>
             )}
             
