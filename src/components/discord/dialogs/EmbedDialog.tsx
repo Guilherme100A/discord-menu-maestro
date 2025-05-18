@@ -110,7 +110,11 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
                   value={currentEmbed.author?.name || ''} 
                   onChange={(e) => setCurrentEmbed({
                     ...currentEmbed, 
-                    author: {...(currentEmbed.author || {}), name: e.target.value}
+                    author: {
+                      name: e.target.value || 'Author', // Ensure name is always provided
+                      url: currentEmbed.author?.url,
+                      iconUrl: currentEmbed.author?.iconUrl
+                    }
                   })}
                   placeholder="Author name"
                 />
@@ -122,7 +126,11 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
                   value={currentEmbed.author?.url || ''} 
                   onChange={(e) => setCurrentEmbed({
                     ...currentEmbed, 
-                    author: {...(currentEmbed.author || {}), url: e.target.value}
+                    author: {
+                      name: currentEmbed.author?.name || 'Author', // Ensure name is always provided
+                      url: e.target.value,
+                      iconUrl: currentEmbed.author?.iconUrl
+                    }
                   })}
                   placeholder="https://example.com"
                 />
@@ -134,7 +142,11 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
                   value={currentEmbed.author?.iconUrl || ''} 
                   onChange={(e) => setCurrentEmbed({
                     ...currentEmbed, 
-                    author: {...(currentEmbed.author || {}), iconUrl: e.target.value}
+                    author: {
+                      name: currentEmbed.author?.name || 'Author', // Ensure name is always provided
+                      url: currentEmbed.author?.url,
+                      iconUrl: e.target.value
+                    }
                   })}
                   placeholder="https://example.com/icon.png"
                 />
@@ -177,7 +189,10 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
                   value={currentEmbed.footer?.text || ''} 
                   onChange={(e) => setCurrentEmbed({
                     ...currentEmbed, 
-                    footer: {...(currentEmbed.footer || {}), text: e.target.value}
+                    footer: {
+                      text: e.target.value || 'Footer text', // Ensure text is always provided
+                      iconUrl: currentEmbed.footer?.iconUrl
+                    }
                   })}
                   placeholder="Footer text"
                 />
@@ -190,7 +205,10 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
                   value={currentEmbed.footer?.iconUrl || ''} 
                   onChange={(e) => setCurrentEmbed({
                     ...currentEmbed, 
-                    footer: {...(currentEmbed.footer || {}), iconUrl: e.target.value}
+                    footer: {
+                      text: currentEmbed.footer?.text || 'Footer text', // Ensure text is always provided
+                      iconUrl: e.target.value
+                    }
                   })}
                   placeholder="https://example.com/footer-icon.png"
                 />
