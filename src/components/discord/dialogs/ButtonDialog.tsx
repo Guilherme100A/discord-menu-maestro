@@ -5,7 +5,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { DiscordButton, DiscordView } from '../DiscordTypes';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 
 interface ButtonDialogProps {
   showButtonDialog: boolean;
@@ -28,7 +30,7 @@ const ButtonDialog: React.FC<ButtonDialogProps> = ({
 }) => {
   return (
     <Dialog open={showButtonDialog} onOpenChange={setShowButtonDialog}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Button' : 'Add New Button'}</DialogTitle>
         </DialogHeader>
@@ -103,6 +105,39 @@ const ButtonDialog: React.FC<ButtonDialogProps> = ({
               />
             </div>
           )}
+
+          {/* New button attributes */}
+          <div>
+            <Label htmlFor="button-url">URL (for link buttons)</Label>
+            <Input 
+              id="button-url" 
+              value={currentButton.url || ''} 
+              onChange={(e) => setCurrentButton({...currentButton, url: e.target.value})}
+              placeholder="https://example.com"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="button-emoji">Emoji</Label>
+            <Input 
+              id="button-emoji" 
+              value={currentButton.emoji || ''} 
+              onChange={(e) => setCurrentButton({...currentButton, emoji: e.target.value})}
+              placeholder="👍"
+            />
+            <p className="text-sm text-gray-500 mt-1">Unicode emoji or Discord emoji code</p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="button-disabled"
+              checked={currentButton.disabled || false}
+              onCheckedChange={(checked) => 
+                setCurrentButton({...currentButton, disabled: checked})
+              }
+            />
+            <Label htmlFor="button-disabled">Disabled</Label>
+          </div>
         </div>
         <DialogFooter>
           <Button onClick={handleAddButton}>

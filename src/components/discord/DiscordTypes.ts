@@ -5,6 +5,11 @@ export interface DiscordEmbed {
   description: string;
   color: string;
   fields: { name: string; value: string; inline: boolean }[];
+  url?: string;
+  author?: { name: string; url?: string; iconUrl?: string };
+  footer?: { text: string; iconUrl?: string };
+  thumbnail?: string;
+  image?: string;
 }
 
 export interface DiscordButton {
@@ -14,14 +19,20 @@ export interface DiscordButton {
   action: 'navigate' | 'custom';
   targetViewId?: string;
   customCode?: string;
+  url?: string;
+  emoji?: string;
+  disabled?: boolean;
 }
 
 export interface DiscordSelectMenu {
   id: string;
   placeholder: string;
-  options: { label: string; value: string; description?: string }[];
+  options: { label: string; value: string; description?: string; emoji?: string; default?: boolean }[];
   action: 'filter' | 'navigate';
   targetViewId?: string;
+  minValues?: number;
+  maxValues?: number;
+  disabled?: boolean;
 }
 
 export interface DiscordView {
@@ -30,4 +41,6 @@ export interface DiscordView {
   embeds: DiscordEmbed[];
   buttons: DiscordButton[];
   selectMenus: DiscordSelectMenu[];
+  ephemeral?: boolean;
+  timeout?: number;
 }

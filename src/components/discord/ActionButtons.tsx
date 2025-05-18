@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Save } from 'lucide-react';
+import { PlusCircle, Save, Settings } from 'lucide-react';
 import { DiscordView } from './DiscordTypes';
 
 interface ActionButtonsProps {
@@ -11,6 +11,7 @@ interface ActionButtonsProps {
   onAddButtonClick: () => void;
   onAddSelectMenuClick: () => void;
   onShowCodeClick: () => void;
+  onEditViewSettingsClick: () => void;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -18,17 +19,24 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onAddEmbedClick,
   onAddButtonClick,
   onAddSelectMenuClick,
-  onShowCodeClick
+  onShowCodeClick,
+  onEditViewSettingsClick
 }) => {
   return (
     <Card className="mb-4">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Active View: {activeView.name}</span>
-          <Button onClick={onShowCodeClick}>
-            <Save className="mr-2 h-4 w-4" />
-            Export Code
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onEditViewSettingsClick}>
+              <Settings className="mr-2 h-4 w-4" />
+              View Settings
+            </Button>
+            <Button onClick={onShowCodeClick}>
+              <Save className="mr-2 h-4 w-4" />
+              Export Code
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
