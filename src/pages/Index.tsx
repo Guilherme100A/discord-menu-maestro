@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import InteractiveDiscordPreview from '@/components/InteractiveDiscordPreview';
@@ -435,6 +434,20 @@ const Index: React.FC = () => {
     }
   };
 
+  const handleEditViewSettings = () => {
+    // Find the current view to edit
+    const viewToEdit = views.find(view => view.id === activeViewId);
+    if (viewToEdit) {
+      setCurrentView({
+        id: viewToEdit.id,
+        name: viewToEdit.name
+      });
+      setIsEditMode(true);
+      setEditItemId(viewToEdit.id);
+      setShowViewDialog(true);
+    }
+  };
+
   // Dialog opener handlers
   const handleAddEmbedClick = () => {
     setIsEditMode(false);
@@ -498,6 +511,7 @@ const Index: React.FC = () => {
             onAddButtonClick={handleAddButtonClick}
             onAddSelectMenuClick={handleAddSelectMenuClick}
             onShowCodeClick={() => setShowCodeDialog(true)}
+            onEditViewSettingsClick={handleEditViewSettings}
           />
         </div>
         
