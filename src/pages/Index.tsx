@@ -54,9 +54,10 @@ const Index: React.FC = () => {
     action: 'navigate'
   });
 
-  const [currentView, setCurrentView] = useState<{ id: string; name: string }>({
+  const [currentView, setCurrentView] = useState<{ id: string; name: string; ephemeral?: boolean }>({
     id: '',
-    name: ''
+    name: '',
+    ephemeral: false
   });
 
   const [currentField, setCurrentField] = useState<{name: string; value: string; inline: boolean}>({
@@ -94,7 +95,11 @@ const Index: React.FC = () => {
     
     if (isEditMode) {
       setViews(views.map(view => 
-        view.id === editItemId ? { ...view, name: currentView.name } : view
+        view.id === editItemId ? { 
+          ...view, 
+          name: currentView.name,
+          ephemeral: currentView.ephemeral 
+        } : view
       ));
       toast({
         title: "Success",
@@ -106,7 +111,8 @@ const Index: React.FC = () => {
         name: currentView.name,
         embeds: [],
         buttons: [],
-        selectMenus: []
+        selectMenus: [],
+        ephemeral: currentView.ephemeral
       }]);
       toast({
         title: "Success",
@@ -114,7 +120,7 @@ const Index: React.FC = () => {
       });
     }
     
-    setCurrentView({ id: '', name: '' });
+    setCurrentView({ id: '', name: '', ephemeral: false });
     setShowViewDialog(false);
     setIsEditMode(false);
     setEditItemId('');
@@ -409,7 +415,8 @@ const Index: React.FC = () => {
       if (viewToEdit) {
         setCurrentView({
           id: viewToEdit.id,
-          name: viewToEdit.name
+          name: viewToEdit.name,
+          ephemeral: viewToEdit.ephemeral
         });
         setShowViewDialog(true);
       }
@@ -440,7 +447,8 @@ const Index: React.FC = () => {
     if (viewToEdit) {
       setCurrentView({
         id: viewToEdit.id,
-        name: viewToEdit.name
+        name: viewToEdit.name,
+        ephemeral: viewToEdit.ephemeral
       });
       setIsEditMode(true);
       setEditItemId(viewToEdit.id);
@@ -486,7 +494,7 @@ const Index: React.FC = () => {
 
   const handleAddViewClick = () => {
     setIsEditMode(false);
-    setCurrentView({ id: '', name: '' });
+    setCurrentView({ id: '', name: '', ephemeral: false });
     setShowViewDialog(true);
   };
 
