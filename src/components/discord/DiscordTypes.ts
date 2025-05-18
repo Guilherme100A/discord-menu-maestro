@@ -6,6 +6,7 @@ export interface DiscordEmbed {
   color: string;
   fields: { name: string; value: string; inline: boolean }[];
   url?: string;
+  timestamp?: string;
   author?: { name: string; url?: string; iconUrl?: string };
   footer?: { text: string; iconUrl?: string };
   thumbnail?: string;

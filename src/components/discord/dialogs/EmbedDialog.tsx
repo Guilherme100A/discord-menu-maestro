@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Trash2 } from 'lucide-react';
+import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { DiscordEmbed } from '../DiscordTypes';
 
 interface EmbedDialogProps {
@@ -48,15 +50,28 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
               placeholder="Menu Title"
             />
           </div>
+          
+          <div>
+            <Label htmlFor="url">URL (Title Link)</Label>
+            <Input 
+              id="url" 
+              value={currentEmbed.url || ''} 
+              onChange={(e) => setCurrentEmbed({...currentEmbed, url: e.target.value})}
+              placeholder="https://example.com"
+            />
+          </div>
+          
           <div>
             <Label htmlFor="description">Description</Label>
-            <Input 
+            <Textarea 
               id="description" 
               value={currentEmbed.description} 
               onChange={(e) => setCurrentEmbed({...currentEmbed, description: e.target.value})}
-              placeholder="Description text..."
+              placeholder="Description text (supports Markdown)..."
+              className="min-h-[100px]"
             />
           </div>
+          
           <div>
             <Label htmlFor="color">Color</Label>
             <div className="flex items-center space-x-2">
@@ -74,6 +89,115 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
               />
             </div>
           </div>
+          
+          <div>
+            <Label htmlFor="timestamp">Timestamp</Label>
+            <Input 
+              id="timestamp" 
+              type="datetime-local"
+              value={currentEmbed.timestamp || ''} 
+              onChange={(e) => setCurrentEmbed({...currentEmbed, timestamp: e.target.value})}
+            />
+          </div>
+          
+          <div className="border rounded-md p-3">
+            <h3 className="font-medium mb-2">Author</h3>
+            <div className="grid gap-2">
+              <div>
+                <Label htmlFor="author-name">Name</Label>
+                <Input 
+                  id="author-name" 
+                  value={currentEmbed.author?.name || ''} 
+                  onChange={(e) => setCurrentEmbed({
+                    ...currentEmbed, 
+                    author: {...(currentEmbed.author || {}), name: e.target.value}
+                  })}
+                  placeholder="Author name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="author-url">URL</Label>
+                <Input 
+                  id="author-url" 
+                  value={currentEmbed.author?.url || ''} 
+                  onChange={(e) => setCurrentEmbed({
+                    ...currentEmbed, 
+                    author: {...(currentEmbed.author || {}), url: e.target.value}
+                  })}
+                  placeholder="https://example.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="author-icon-url">Icon URL</Label>
+                <Input 
+                  id="author-icon-url" 
+                  value={currentEmbed.author?.iconUrl || ''} 
+                  onChange={(e) => setCurrentEmbed({
+                    ...currentEmbed, 
+                    author: {...(currentEmbed.author || {}), iconUrl: e.target.value}
+                  })}
+                  placeholder="https://example.com/icon.png"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="border rounded-md p-3">
+            <h3 className="font-medium mb-2">Images</h3>
+            <div className="grid gap-2">
+              <div>
+                <Label htmlFor="thumbnail">Thumbnail URL</Label>
+                <Input 
+                  id="thumbnail" 
+                  value={currentEmbed.thumbnail || ''} 
+                  onChange={(e) => setCurrentEmbed({...currentEmbed, thumbnail: e.target.value})}
+                  placeholder="https://example.com/thumbnail.png"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="image">Main Image URL</Label>
+                <Input 
+                  id="image" 
+                  value={currentEmbed.image || ''} 
+                  onChange={(e) => setCurrentEmbed({...currentEmbed, image: e.target.value})}
+                  placeholder="https://example.com/image.png"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="border rounded-md p-3">
+            <h3 className="font-medium mb-2">Footer</h3>
+            <div className="grid gap-2">
+              <div>
+                <Label htmlFor="footer-text">Text</Label>
+                <Input 
+                  id="footer-text" 
+                  value={currentEmbed.footer?.text || ''} 
+                  onChange={(e) => setCurrentEmbed({
+                    ...currentEmbed, 
+                    footer: {...(currentEmbed.footer || {}), text: e.target.value}
+                  })}
+                  placeholder="Footer text"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="footer-icon">Icon URL</Label>
+                <Input 
+                  id="footer-icon" 
+                  value={currentEmbed.footer?.iconUrl || ''} 
+                  onChange={(e) => setCurrentEmbed({
+                    ...currentEmbed, 
+                    footer: {...(currentEmbed.footer || {}), iconUrl: e.target.value}
+                  })}
+                  placeholder="https://example.com/footer-icon.png"
+                />
+              </div>
+            </div>
+          </div>
+          
           <div className="border rounded-md p-3">
             <h3 className="font-medium mb-2">Fields</h3>
             {currentEmbed.fields.length > 0 && (
