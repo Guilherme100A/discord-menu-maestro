@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,6 +39,11 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Embed' : 'Add New Embed'}</DialogTitle>
+          <DialogDescription>
+            {isEditMode 
+              ? "Edit your embed's properties" 
+              : "Add details for your new embed. Title is required for the first embed in a view. For additional embeds, either a title or at least one image is required."}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div>
@@ -47,7 +52,7 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
               id="title" 
               value={currentEmbed.title} 
               onChange={(e) => setCurrentEmbed({...currentEmbed, title: e.target.value})}
-              placeholder="Menu Title"
+              placeholder="Menu Title (required for first embed)"
             />
           </div>
           
@@ -175,6 +180,9 @@ const EmbedDialog: React.FC<EmbedDialogProps> = ({
                   onChange={(e) => setCurrentEmbed({...currentEmbed, image: e.target.value})}
                   placeholder="https://example.com/image.png"
                 />
+                <div className="text-xs text-gray-500 mt-1">
+                  An image is required if this embed has no title
+                </div>
               </div>
             </div>
           </div>

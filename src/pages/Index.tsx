@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import InteractiveDiscordPreview from '@/components/InteractiveDiscordPreview';
@@ -130,10 +131,24 @@ const Index: React.FC = () => {
   };
 
   const handleAddEmbed = () => {
-    if (!currentEmbed.title.trim()) {
+    const activeView = views.find(view => view.id === activeViewId);
+    const hasExistingEmbeds = activeView?.embeds.length > 0;
+    
+    // If this isn't the first embed, only require an image if there's no title
+    if (!hasExistingEmbeds && !currentEmbed.title.trim()) {
       toast({
         title: "Error",
-        description: "Embed title is required",
+        description: "The first embed in a view must have a title",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // For subsequent embeds, either a title or at least one image is required
+    if (!currentEmbed.title.trim() && !currentEmbed.image && !currentEmbed.thumbnail) {
+      toast({
+        title: "Error",
+        description: "Embed must have either a title or at least one image",
         variant: "destructive",
       });
       return;
