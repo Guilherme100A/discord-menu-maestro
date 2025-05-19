@@ -1,4 +1,5 @@
 
+
 export interface DiscordEmbed {
   id: string;
   title: string;
@@ -46,3 +47,4 @@ export interface DiscordView {
   ephemeral?: boolean;
   timeout?: number;
 }
+
