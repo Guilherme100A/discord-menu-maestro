@@ -3,52 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-
-interface DiscordEmbed {
-  id: string;
-  title: string;
-  description: string;
-  color: string;
-  fields: { name: string; value: string; inline: boolean }[];
-  url?: string;
-  author?: { name: string; url?: string; iconUrl?: string };
-  footer?: { text: string; iconUrl?: string };
-  thumbnail?: string;
-  image?: string;
-}
-
-interface DiscordButton {
-  id: string;
-  label: string;
-  style: 'primary' | 'secondary' | 'success' | 'danger';
-  action: 'navigate' | 'custom';
-  targetViewId?: string;
-  customCode?: string;
-  url?: string;
-  emoji?: string;
-  disabled?: boolean;
-}
-
-interface DiscordSelectMenu {
-  id: string;
-  placeholder: string;
-  options: { label: string; value: string; description?: string; emoji?: string; default?: boolean }[];
-  action: 'filter' | 'navigate';
-  targetViewId?: string;
-  minValues?: number;
-  maxValues?: number;
-  disabled?: boolean;
-}
-
-interface DiscordView {
-  id: string;
-  name: string;
-  embeds: DiscordEmbed[];
-  buttons: DiscordButton[];
-  selectMenus: DiscordSelectMenu[];
-  ephemeral?: boolean;
-  timeout?: number;
-}
+import { DiscordView, DiscordEmbed, DiscordButton, DiscordSelectMenu } from '@/components/discord/DiscordTypes';
 
 interface InteractiveDiscordPreviewProps {
   views: DiscordView[];
@@ -81,6 +36,8 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
       }
     } else if (button.action === 'custom' && button.customCode) {
       actionMessage += ` - Custom action: ${button.customCode}`;
+    } else if (button.action === 'ticket') {
+      actionMessage += ` - Creating ticket in category: ${button.ticketCategoryId || 'Default'}`;
     }
 
     setActionHistory(prev => [actionMessage, ...prev.slice(0, 4)]);
