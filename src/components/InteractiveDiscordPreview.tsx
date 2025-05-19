@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -74,6 +73,9 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
         if (targetView.ephemeral) {
           actionMessage += " (ephemeral)";
         }
+        if (targetView.timeout) {
+          actionMessage += ` (timeout: ${targetView.timeout}s)`;
+        }
       } else {
         actionMessage += ` - Target view not found`;
       }
@@ -98,6 +100,9 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
         actionMessage += ` - Navigated to "${targetView.name}"`;
         if (targetView.ephemeral) {
           actionMessage += " (ephemeral)";
+        }
+        if (targetView.timeout) {
+          actionMessage += ` (timeout: ${targetView.timeout}s)`;
         }
       }
     } else if (menu?.action === 'filter') {

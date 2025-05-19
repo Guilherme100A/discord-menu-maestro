@@ -54,10 +54,11 @@ const Index: React.FC = () => {
     action: 'navigate'
   });
 
-  const [currentView, setCurrentView] = useState<{ id: string; name: string; ephemeral?: boolean }>({
+  const [currentView, setCurrentView] = useState<{ id: string; name: string; ephemeral?: boolean; timeout?: number }>({
     id: '',
     name: '',
-    ephemeral: false
+    ephemeral: false,
+    timeout: 0
   });
 
   const [currentField, setCurrentField] = useState<{name: string; value: string; inline: boolean}>({
@@ -98,7 +99,8 @@ const Index: React.FC = () => {
         view.id === editItemId ? { 
           ...view, 
           name: currentView.name,
-          ephemeral: currentView.ephemeral 
+          ephemeral: currentView.ephemeral,
+          timeout: currentView.timeout && currentView.timeout > 0 ? currentView.timeout : undefined
         } : view
       ));
       toast({
@@ -112,7 +114,8 @@ const Index: React.FC = () => {
         embeds: [],
         buttons: [],
         selectMenus: [],
-        ephemeral: currentView.ephemeral
+        ephemeral: currentView.ephemeral,
+        timeout: currentView.timeout && currentView.timeout > 0 ? currentView.timeout : undefined
       }]);
       toast({
         title: "Success",
@@ -120,7 +123,7 @@ const Index: React.FC = () => {
       });
     }
     
-    setCurrentView({ id: '', name: '', ephemeral: false });
+    setCurrentView({ id: '', name: '', ephemeral: false, timeout: 0 });
     setShowViewDialog(false);
     setIsEditMode(false);
     setEditItemId('');
@@ -416,7 +419,8 @@ const Index: React.FC = () => {
         setCurrentView({
           id: viewToEdit.id,
           name: viewToEdit.name,
-          ephemeral: viewToEdit.ephemeral
+          ephemeral: viewToEdit.ephemeral,
+          timeout: viewToEdit.timeout || 0
         });
         setShowViewDialog(true);
       }
@@ -448,7 +452,8 @@ const Index: React.FC = () => {
       setCurrentView({
         id: viewToEdit.id,
         name: viewToEdit.name,
-        ephemeral: viewToEdit.ephemeral
+        ephemeral: viewToEdit.ephemeral,
+        timeout: viewToEdit.timeout || 0
       });
       setIsEditMode(true);
       setEditItemId(viewToEdit.id);
@@ -494,7 +499,7 @@ const Index: React.FC = () => {
 
   const handleAddViewClick = () => {
     setIsEditMode(false);
-    setCurrentView({ id: '', name: '', ephemeral: false });
+    setCurrentView({ id: '', name: '', ephemeral: false, timeout: 0 });
     setShowViewDialog(true);
   };
 
