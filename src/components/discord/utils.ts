@@ -34,6 +34,51 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # Dictionary to store all views
 views = ${JSON.stringify(views, null, 2)}
 
+class TicketButton(discord.ui.Button):
+    def __init__(self, label, style, ticket_category_id):
+        super().__init__(label=label, style=style, custom_id="create_ticket")
+        self.ticket_category_id = ticket_category_id
+
+    async def callback(self, interaction: discord.Interaction):
+        guild = interaction.guild
+        category = discord.utils.get(guild.categories, id=self.ticket_category_id)
+        
+        if not category:
+            await interaction.response.send_message(
+                "❗ Ticket category not found. Please contact an administrator.",
+                ephemeral=True
+            )
+            return
+
+        # Check for existing ticket
+        for channel in category.text_channels:
+            if channel.topic and str(interaction.user.id) in channel.topic:
+                await interaction.response.send_message(
+                    "❗ You already have an open ticket.",
+                    ephemeral=True
+                )
+                return
+
+        # Set permissions so only the user and staff can see the channel
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            interaction.user: discord.PermissionOverwrite(read_messages=True)
+        }
+
+        # Create the ticket channel
+        ticket_channel = await guild.create_text_channel(
+            name=f"ticket-{interaction.user.name}",
+            overwrites=overwrites,
+            category=category,
+            topic=str(interaction.user.id)
+        )
+
+        await ticket_channel.send(f"{interaction.user.mention}, your ticket has been created! 🎟️")
+        await interaction.response.send_message(
+            f"✅ Ticket created: {ticket_channel.mention}",
+            ephemeral=True
+        )
+
 class MenuView(discord.ui.View):
     def __init__(self, view_id):
         super().__init__(timeout=None)
@@ -43,12 +88,20 @@ class MenuView(discord.ui.View):
         # Add buttons
         if self.view_data:
             for button in self.view_data["buttons"]:
-                btn = discord.ui.Button(
-                    label=button["label"],
-                    style=getattr(ButtonStyle, button["style"]),
-                    custom_id=f"button_{button['id']}"
-                )
-                self.add_item(btn)
+                if button["action"] == "ticket":
+                    btn = TicketButton(
+                        label=button["label"],
+                        style=getattr(ButtonStyle, button["style"]),
+                        ticket_category_id=button.get("ticketCategoryId")
+                    )
+                    self.add_item(btn)
+                else:
+                    btn = discord.ui.Button(
+                        label=button["label"],
+                        style=getattr(ButtonStyle, button["style"]),
+                        custom_id=f"button_{button['id']}"
+                    )
+                    self.add_item(btn)
             
             # Add select menus
             for menu in self.view_data["selectMenus"]:
@@ -210,12 +263,17 @@ function createComponents(viewData) {
             const buttonsSlice = viewData.buttons.slice(i, i + 5);
             
             buttonsSlice.forEach(button => {
-                row.addComponents(
-                    new MessageButton()
-                        .setCustomId(\`button_\${button.id}\`)
-                        .setLabel(button.label)
-                        .setStyle(button.style)
-                );
+                const btn = new MessageButton()
+                    .setLabel(button.label)
+                    .setStyle(button.style);
+                
+                if (button.action === 'ticket') {
+                    btn.setCustomId(\`ticket_\${button.ticketCategoryId || 'unknown'}\`);
+                } else {
+                    btn.setCustomId(\`button_\${button.id}\`);
+                }
+                
+                row.addComponents(btn);
             });
             
             buttonRows.push(row);
@@ -243,6 +301,59 @@ function createComponents(viewData) {
     });
     
     return components;
+}
+
+// Handle ticket creation
+async function handleTicketCreation(interaction, categoryId) {
+    const guild = interaction.guild;
+    const category = guild.channels.cache.find(c => c.id === categoryId && c.type === 'GUILD_CATEGORY');
+    
+    if (!category) {
+        await interaction.reply({ 
+            content: "❗ Ticket category not found. Please contact an administrator.", 
+            ephemeral: true 
+        });
+        return;
+    }
+    
+    // Check for existing ticket
+    const existingTicket = category.children.find(
+        channel => channel.topic && channel.topic.includes(interaction.user.id)
+    );
+    
+    if (existingTicket) {
+        await interaction.reply({ 
+            content: "❗ You already have an open ticket.", 
+            ephemeral: true 
+        });
+        return;
+    }
+    
+    // Set permissions
+    const permissionOverwrites = [
+        {
+            id: guild.id,
+            deny: ['VIEW_CHANNEL']
+        },
+        {
+            id: interaction.user.id,
+            allow: ['VIEW_CHANNEL']
+        }
+    ];
+    
+    // Create ticket channel
+    const ticketChannel = await guild.channels.create(\`ticket-\${interaction.user.username}\`, {
+        type: 'GUILD_TEXT',
+        parent: category.id,
+        topic: \`Ticket for \${interaction.user.id}\`,
+        permissionOverwrites: permissionOverwrites
+    });
+    
+    await ticketChannel.send(\`\${interaction.user.toString()}, your ticket has been created! 🎟️\`);
+    await interaction.reply({ 
+        content: \`✅ Ticket created: \${ticketChannel.toString()}\`, 
+        ephemeral: true 
+    });
 }
 
 // Command to show menu
@@ -279,6 +390,12 @@ client.on('interactionCreate', async interaction => {
     if (!interaction.isButton() && !interaction.isSelectMenu()) return;
     
     const customId = interaction.customId;
+    
+    if (customId.startsWith('ticket_')) {
+        const categoryId = customId.substring(7); // Remove 'ticket_' prefix
+        await handleTicketCreation(interaction, categoryId);
+        return;
+    }
     
     if (customId.startsWith('button_')) {
         const buttonId = customId.substring(7); // Remove 'button_' prefix

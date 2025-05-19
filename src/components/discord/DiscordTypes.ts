@@ -17,12 +17,13 @@ export interface DiscordButton {
   id: string;
   label: string;
   style: 'primary' | 'secondary' | 'success' | 'danger';
-  action: 'navigate' | 'custom';
+  action: 'navigate' | 'custom' | 'ticket';
   targetViewId?: string;
   customCode?: string;
   url?: string;
   emoji?: string;
   disabled?: boolean;
+  ticketCategoryId?: string;
 }
 
 export interface DiscordSelectMenu {

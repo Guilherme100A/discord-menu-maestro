@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { DiscordButton, DiscordView } from '../DiscordTypes';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Ticket } from 'lucide-react';
 
 interface ButtonDialogProps {
   showButtonDialog: boolean;
@@ -33,6 +34,7 @@ const ButtonDialog: React.FC<ButtonDialogProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Button' : 'Add New Button'}</DialogTitle>
+          <DialogDescription>Configure your button's appearance and behavior</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div>
@@ -65,7 +67,7 @@ const ButtonDialog: React.FC<ButtonDialogProps> = ({
             <Label htmlFor="button-action">Action</Label>
             <Select 
               value={currentButton.action}
-              onValueChange={(value) => setCurrentButton({...currentButton, action: value as 'navigate' | 'custom'})}
+              onValueChange={(value) => setCurrentButton({...currentButton, action: value as 'navigate' | 'custom' | 'ticket'})}
             >
               <SelectTrigger id="button-action">
                 <SelectValue placeholder="Select action" />
@@ -73,6 +75,12 @@ const ButtonDialog: React.FC<ButtonDialogProps> = ({
               <SelectContent>
                 <SelectItem value="navigate">Navigate to View</SelectItem>
                 <SelectItem value="custom">Custom Action</SelectItem>
+                <SelectItem value="ticket">
+                  <div className="flex items-center">
+                    <Ticket className="mr-2 h-4 w-4" />
+                    <span>Create Ticket</span>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -103,6 +111,19 @@ const ButtonDialog: React.FC<ButtonDialogProps> = ({
                 onChange={(e) => setCurrentButton({...currentButton, customCode: e.target.value})}
                 placeholder="Describe the custom action"
               />
+            </div>
+          )}
+          
+          {currentButton.action === 'ticket' && (
+            <div>
+              <Label htmlFor="ticket-category">Ticket Category ID</Label>
+              <Input 
+                id="ticket-category" 
+                value={currentButton.ticketCategoryId || ''} 
+                onChange={(e) => setCurrentButton({...currentButton, ticketCategoryId: e.target.value})}
+                placeholder="Discord Category ID for tickets"
+              />
+              <p className="text-sm text-gray-500 mt-1">This is the Discord category ID where ticket channels will be created</p>
             </div>
           )}
 
