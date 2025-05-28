@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Download, Upload, FolderOpen, Save } from 'lucide-react';
+import { FolderOpen, Save } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { DiscordView } from './DiscordTypes';
 
@@ -21,20 +20,7 @@ const MenuStorage: React.FC<MenuStorageProps> = ({ views, onLoadViews }) => {
     return saved ? JSON.parse(saved) : {};
   });
   const [menuName, setMenuName] = useState('');
-  const [importData, setImportData] = useState('');
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [showExportDialog, setShowExportDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
-
-  // Auto-save current menu whenever views change
-  useEffect(() => {
-    if (views.length > 0) {
-      const autoSaveName = 'Auto-saved Menu';
-      const updated = { ...savedMenus, [autoSaveName]: views };
-      setSavedMenus(updated);
-      localStorage.setItem('savedDiscordMenus', JSON.stringify(updated));
-    }
-  }, [views]);
 
   const saveMenu = () => {
     if (!menuName.trim()) {
@@ -82,69 +68,12 @@ const MenuStorage: React.FC<MenuStorageProps> = ({ views, onLoadViews }) => {
     });
   };
 
-  const exportMenu = () => {
-    const exportData = {
-      name: menuName || 'Discord Menu',
-      timestamp: new Date().toISOString(),
-      views: views
-    };
-    
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${menuName || 'discord-menu'}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
-    setShowExportDialog(false);
-    setMenuName('');
-    
-    toast({
-      title: "Success",
-      description: "Menu exported successfully",
-    });
-  };
-
-  const importMenu = () => {
-    try {
-      const parsed = JSON.parse(importData);
-      
-      if (!parsed.views || !Array.isArray(parsed.views)) {
-        throw new Error('Invalid menu format');
-      }
-      
-      onLoadViews(parsed.views);
-      setImportData('');
-      setShowImportDialog(false);
-      
-      toast({
-        title: "Success",
-        description: "Menu imported successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid menu data. Please check the format.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <Card className="mb-4">
       <CardHeader>
         <CardTitle>Menu Storage</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-sm text-gray-600 bg-green-50 p-3 rounded-md">
-          ✓ Menu automatically saved as "Auto-saved Menu"
-        </div>
-
         <div className="flex flex-col space-y-2">
           <Label htmlFor="menuName">Save Current Menu</Label>
           <div className="flex space-x-2">
@@ -191,63 +120,6 @@ const MenuStorage: React.FC<MenuStorageProps> = ({ views, onLoadViews }) => {
                     </div>
                   ))
                 )}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Export Menu</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="exportName">Menu Name</Label>
-                  <Input
-                    id="exportName"
-                    placeholder="Enter name for export..."
-                    value={menuName}
-                    onChange={(e) => setMenuName(e.target.value)}
-                  />
-                </div>
-                <Button onClick={exportMenu} className="w-full">
-                  Download JSON File
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Upload className="w-4 h-4 mr-2" />
-                Import
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Import Menu</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="importData">Paste JSON Data</Label>
-                  <Textarea
-                    id="importData"
-                    placeholder="Paste the exported menu JSON data here..."
-                    value={importData}
-                    onChange={(e) => setImportData(e.target.value)}
-                    rows={10}
-                  />
-                </div>
-                <Button onClick={importMenu} className="w-full">
-                  Import Menu
-                </Button>
               </div>
             </DialogContent>
           </Dialog>
