@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Download, Upload, FolderOpen } from 'lucide-react';
+import { Download, Upload, FolderOpen, Save } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { DiscordView } from './DiscordTypes';
 
@@ -35,6 +35,28 @@ const MenuStorage: React.FC<MenuStorageProps> = ({ views, onLoadViews }) => {
       localStorage.setItem('savedDiscordMenus', JSON.stringify(updated));
     }
   }, [views]);
+
+  const saveMenu = () => {
+    if (!menuName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a menu name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updated = { ...savedMenus, [menuName]: views };
+    setSavedMenus(updated);
+    localStorage.setItem('savedDiscordMenus', JSON.stringify(updated));
+    
+    toast({
+      title: "Success",
+      description: `Menu "${menuName}" saved successfully`,
+    });
+    
+    setMenuName('');
+  };
 
   const loadMenu = (name: string) => {
     const menu = savedMenus[name];
@@ -121,6 +143,22 @@ const MenuStorage: React.FC<MenuStorageProps> = ({ views, onLoadViews }) => {
       <CardContent className="space-y-4">
         <div className="text-sm text-gray-600 bg-green-50 p-3 rounded-md">
           ✓ Menu automatically saved as "Auto-saved Menu"
+        </div>
+
+        <div className="flex flex-col space-y-2">
+          <Label htmlFor="menuName">Save Current Menu</Label>
+          <div className="flex space-x-2">
+            <Input
+              id="menuName"
+              placeholder="Enter menu name..."
+              value={menuName}
+              onChange={(e) => setMenuName(e.target.value)}
+            />
+            <Button onClick={saveMenu}>
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
