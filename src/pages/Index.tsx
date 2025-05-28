@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import InteractiveDiscordPreview from '@/components/InteractiveDiscordPreview';
@@ -6,6 +5,7 @@ import ViewSelector from '@/components/discord/ViewSelector';
 import ActionButtons from '@/components/discord/ActionButtons';
 import DiscordPreview from '@/components/discord/DiscordPreview';
 import CodeDialog from '@/components/discord/CodeDialog';
+import MenuStorage from '@/components/discord/MenuStorage';
 import ViewDialog from '@/components/discord/dialogs/ViewDialog';
 import EmbedDialog from '@/components/discord/dialogs/EmbedDialog';
 import ButtonDialog from '@/components/discord/dialogs/ButtonDialog';
@@ -82,6 +82,11 @@ const Index: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('discordViews', JSON.stringify(views));
   }, [views]);
+
+  const handleLoadViews = (newViews: DiscordView[]) => {
+    setViews(newViews);
+    setActiveViewId(newViews[0]?.id || 'main_view');
+  };
 
   const handleAddView = () => {
     if (!currentView.name.trim()) {
@@ -524,6 +529,11 @@ const Index: React.FC = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
+          <MenuStorage 
+            views={views}
+            onLoadViews={handleLoadViews}
+          />
+          
           <ViewSelector 
             views={views}
             activeViewId={activeViewId}
