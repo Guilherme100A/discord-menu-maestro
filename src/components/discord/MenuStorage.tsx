@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Download, Upload, Save, FolderOpen } from 'lucide-react';
+import { Download, Upload, FolderOpen } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { DiscordView } from './DiscordTypes';
 
@@ -26,27 +26,15 @@ const MenuStorage: React.FC<MenuStorageProps> = ({ views, onLoadViews }) => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
 
-  const saveMenu = () => {
-    if (!menuName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a menu name",
-        variant: "destructive",
-      });
-      return;
+  // Auto-save current menu whenever views change
+  useEffect(() => {
+    if (views.length > 0) {
+      const autoSaveName = 'Auto-saved Menu';
+      const updated = { ...savedMenus, [autoSaveName]: views };
+      setSavedMenus(updated);
+      localStorage.setItem('savedDiscordMenus', JSON.stringify(updated));
     }
-
-    const updated = { ...savedMenus, [menuName]: views };
-    setSavedMenus(updated);
-    localStorage.setItem('savedDiscordMenus', JSON.stringify(updated));
-    
-    toast({
-      title: "Success",
-      description: `Menu "${menuName}" saved successfully`,
-    });
-    
-    setMenuName('');
-  };
+  }, [views]);
 
   const loadMenu = (name: string) => {
     const menu = savedMenus[name];
@@ -131,20 +119,8 @@ const MenuStorage: React.FC<MenuStorageProps> = ({ views, onLoadViews }) => {
         <CardTitle>Menu Storage</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col space-y-2">
-          <Label htmlFor="menuName">Save Current Menu</Label>
-          <div className="flex space-x-2">
-            <Input
-              id="menuName"
-              placeholder="Enter menu name..."
-              value={menuName}
-              onChange={(e) => setMenuName(e.target.value)}
-            />
-            <Button onClick={saveMenu}>
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
-          </div>
+        <div className="text-sm text-gray-600 bg-green-50 p-3 rounded-md">
+          ✓ Menu automatically saved as "Auto-saved Menu"
         </div>
 
         <div className="flex flex-wrap gap-2">
