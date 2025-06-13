@@ -1,4 +1,3 @@
-
 export interface DiscordEmbed {
   id: string;
   title: string;
@@ -13,6 +12,14 @@ export interface DiscordEmbed {
   image?: string;
 }
 
+export interface TicketQuestion {
+  id: string;
+  question: string;
+  type: 'text' | 'textarea' | 'select';
+  required: boolean;
+  options?: string[];
+}
+
 export interface DiscordButton {
   id: string;
   label: string;
@@ -20,10 +27,11 @@ export interface DiscordButton {
   action: 'navigate' | 'custom' | 'ticket';
   targetViewId?: string;
   customCode?: string;
+  ticketCategoryId?: string;
+  ticketQuestions?: TicketQuestion[];
   url?: string;
   emoji?: string;
   disabled?: boolean;
-  ticketCategoryId?: string;
 }
 
 export interface DiscordSelectMenu {
