@@ -1,3 +1,4 @@
+
 export interface DiscordEmbed {
   id: string;
   title: string;
@@ -29,6 +30,7 @@ export interface DiscordButton {
   customCode?: string;
   ticketCategoryId?: string;
   ticketQuestions?: TicketQuestion[];
+  ticketMessageTemplate?: string;
   url?: string;
   emoji?: string;
   disabled?: boolean;

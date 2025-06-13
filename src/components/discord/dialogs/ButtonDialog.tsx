@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { DiscordButton, DiscordView, TicketQuestion } from '../DiscordTypes';
 import { Ticket, Settings } from 'lucide-react';
 import TicketQuestionsDialog from './TicketQuestionsDialog';
@@ -153,6 +154,20 @@ const ButtonDialog: React.FC<ButtonDialogProps> = ({
                   </div>
                   <p className="text-sm text-gray-500">
                     Configure questions that users must answer when creating a ticket
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="ticket-message-template">Ticket Message Template</Label>
+                  <Textarea
+                    id="ticket-message-template"
+                    value={currentButton.ticketMessageTemplate || ''}
+                    onChange={(e) => setCurrentButton({...currentButton, ticketMessageTemplate: e.target.value})}
+                    placeholder="Hi, my order is {question1} and my issue is {question2}"
+                    className="min-h-[100px]"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Use {`{questionX}`} placeholders where X is the question number (1, 2, 3, etc.) to insert user answers
                   </p>
                 </div>
               </div>

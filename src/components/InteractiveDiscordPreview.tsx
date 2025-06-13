@@ -24,6 +24,18 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
 
   const activeView = views.find(view => view.id === activeViewId) || views[0];
 
+  const formatTicketMessage = (template: string, answers: Record<string, string>, questions: TicketQuestion[]) => {
+    let formattedMessage = template;
+    
+    questions.forEach((question, index) => {
+      const placeholder = `{question${index + 1}}`;
+      const answer = answers[question.id] || 'No answer';
+      formattedMessage = formattedMessage.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), answer);
+    });
+    
+    return formattedMessage;
+  };
+
   const handleButtonClick = (button: DiscordButton) => {
     let actionMessage = `Button "${button.label}" clicked`;
 
@@ -73,11 +85,20 @@ const InteractiveDiscordPreview: React.FC<InteractiveDiscordPreviewProps> = ({ v
     let actionMessage = `✅ Ticket created in category: ${currentTicketButton.ticketCategoryId || 'Default'}`;
     
     if (currentTicketButton.ticketQuestions && currentTicketButton.ticketQuestions.length > 0) {
-      actionMessage += `\n📋 Answers provided:`;
-      currentTicketButton.ticketQuestions.forEach(question => {
-        const answer = ticketAnswers[question.id] || 'No answer';
-        actionMessage += `\n• ${question.question}: ${answer}`;
-      });
+      if (currentTicketButton.ticketMessageTemplate) {
+        const formattedMessage = formatTicketMessage(
+          currentTicketButton.ticketMessageTemplate,
+          ticketAnswers,
+          currentTicketButton.ticketQuestions
+        );
+        actionMessage += `\n📝 Ticket Message: ${formattedMessage}`;
+      } else {
+        actionMessage += `\n📋 Answers provided:`;
+        currentTicketButton.ticketQuestions.forEach(question => {
+          const answer = ticketAnswers[question.id] || 'No answer';
+          actionMessage += `\n• ${question.question}: ${answer}`;
+        });
+      }
     }
 
     setActionHistory(prev => [actionMessage, ...prev.slice(0, 4)]);
